@@ -181,6 +181,47 @@ open class ESTabBar: UITabBar {
 
 internal extension ESTabBar /* Layout */ {
     
+    // iOS 26+ embeds its buttons and Liquid Glass background in a platter.
+    // Only hide that system subtree, never our UIControl-based item containers.
+    private func updateSystemPlatterVisibility(hidden: Bool) {
+        guard #available(iOS 26.0, *) else { return }
+        let platterClasses: [AnyClass] = [
+            "UIKit._UITabBarItemPlatterView", "_UITabBarItemPlatterView",
+            "UIKit._UITabBarPlatterView", "_UITabBarPlatterView"
+        ].compactMap { NSClassFromString($0) }
+
+        // The floating tab bar also installs an ancestor gesture recognizer.
+        // Hiding its platter alone does not stop the glass lens on touch-down.
+        if let selectionGestureClass = NSClassFromString("_UIContinuousSelectionGestureRecognizer") {
+            for gesture in gestureRecognizers ?? [] where gesture.isKind(of: selectionGestureClass) {
+                gesture.isEnabled = !hidden
+            }
+        }
+        for interaction in interactions {
+            if let pointer = interaction as? UIPointerInteraction {
+                pointer.isEnabled = !hidden
+            }
+        }
+
+        func visit(_ view: UIView) {
+            guard !(view is ESTabBarItemContainer) else { return }
+            if platterClasses.contains(where: { view.isKind(of: $0) }) {
+                UIView.performWithoutAnimation {
+                    view.isHidden = hidden
+                    view.alpha = hidden ? 0 : 1
+                    view.isUserInteractionEnabled = !hidden
+                }
+                return
+            }
+            for child in view.subviews {
+                visit(child)
+            }
+        }
+        for subview in subviews {
+            visit(subview)
+        }
+    }
+
     func updateLayout() {
         guard let tabBarItems = self.items else {
             ESTabBarController.printError("empty items")
@@ -196,8 +237,15 @@ internal extension ESTabBar /* Layout */ {
                 return subview1.frame.origin.x < subview2.frame.origin.x
         }
         
+        // Custom fill layout must not depend on UIKit's private buttons.
+        let usesCustomFill = itemCustomPositioning == .fillIncludeSeparator
+            || itemCustomPositioning == .fillExcludeSeparator
+        let hidesSystemPlatter = usesCustomFill && !isCustomizing && !tabBarItems.isEmpty
+            && tabBarItems.allSatisfy { $0 is ESTabBarItem }
+        updateSystemPlatterVisibility(hidden: hidesSystemPlatter)
+
         if isCustomizing {
-            for (idx, _) in tabBarItems.enumerated() {
+            for (idx, _) in tabBarItems.enumerated() where tabBarButtons.indices.contains(idx) {
                 tabBarButtons[idx].isHidden = false
                 moreContentView?.isHidden = true
             }
@@ -205,7 +253,7 @@ internal extension ESTabBar /* Layout */ {
                 container.isHidden = true
             }
         } else {
-            for (idx, item) in tabBarItems.enumerated() {
+            for (idx, item) in tabBarItems.enumerated() where tabBarButtons.indices.contains(idx) {
                 if let _ = item as? ESTabBarItem {
                     tabBarButtons[idx].isHidden = true
                 } else {
@@ -230,7 +278,7 @@ internal extension ESTabBar /* Layout */ {
             }
         }
         
-        if layoutBaseSystem {
+        if layoutBaseSystem && tabBarButtons.count >= containers.count {
             // System itemPositioning
             for (idx, container) in containers.enumerated(){
                 if !tabBarButtons[idx].frame.isEmpty {
@@ -238,11 +286,12 @@ internal extension ESTabBar /* Layout */ {
                 }
             }
         } else {
-            // Custom itemPositioning
+            // Also provide a layout when UIKit has no matching legacy buttons.
+            guard !containers.isEmpty else { return }
             var x: CGFloat = itemEdgeInsets.left
             var y: CGFloat = itemEdgeInsets.top
-            switch itemCustomPositioning! {
-            case .fillExcludeSeparator:
+            switch itemCustomPositioning {
+            case .fillExcludeSeparator?:
                 if y <= 0.0 {
                     y += 1.0
                 }

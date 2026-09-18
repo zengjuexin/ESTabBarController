@@ -1,5 +1,19 @@
 ![ESTabBarController](logo.png)
 
+### 本分支的 iOS 26+ 自定义底栏兼容修复
+
+当全部 item 为 `ESTabBarItem`，并使用 `.fillIncludeSeparator` 或
+`.fillExcludeSeparator` 时，自定义按钮的布局不再依赖系统直接子视图中的
+`UITabBarButton`。系统按钮缺失或数量不足时不会发生数组越界。
+
+在上述自定义布局模式下，同时隐藏系统浮动容器并禁用其连续选择手势、底栏指针效果，
+避免点击时出现系统玻璃气泡。自定义按钮的 `UIControl` 事件继续正常工作。
+此适配仍使用 UIKit 内部类名，升级系统时需回归验证；它并非新系统混合原生 item
+布局或原生 Liquid Glass 集成的完整实现。
+
+通过 CocoaPods 的 `:git` 和 `:commit` 引用本仓库中的修复提交即可，业务项目无需
+在 `post_install` 中再次修改库源码。
+
 [![SwiftPM compatible](https://img.shields.io/badge/SwiftPM-compatible-orange.svg)](#swift-package-manager)
 [![Carthage Compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
 [![CocoaPods](https://img.shields.io/cocoapods/v/ESTabBarController-swift.svg)](http://cocoapods.org/pods/ESTabBarController-swift)
@@ -105,4 +119,3 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
