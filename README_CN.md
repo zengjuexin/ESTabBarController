@@ -1,6 +1,6 @@
 ![ESTabBarController](logo.png)
 
-### 本分支的 iOS 26+ 自定义底栏兼容修复
+### 2.9.1 的 iOS 26+ 自定义底栏兼容修复
 
 当全部 item 为 `ESTabBarItem`，并使用 `.fillIncludeSeparator` 或
 `.fillExcludeSeparator` 时，自定义按钮的布局不再依赖系统直接子视图中的
@@ -11,8 +11,14 @@
 此适配仍使用 UIKit 内部类名，升级系统时需回归验证；它并非新系统混合原生 item
 布局或原生 Liquid Glass 集成的完整实现。
 
-通过 CocoaPods 的 `:git` 和 `:commit` 引用本仓库中的修复提交即可，业务项目无需
-在 `post_install` 中再次修改库源码。
+通过 CocoaPods 的 `:git` 和 `:tag` 引用本仓库的修复版本即可，业务项目无需
+在 `post_install` 中再次修改库源码：
+
+```ruby
+pod 'ESTabBarController-swift',
+    :git => 'https://github.com/zengjuexin/ESTabBarController.git',
+    :tag => '2.9.1'
+```
 
 [![SwiftPM compatible](https://img.shields.io/badge/SwiftPM-compatible-orange.svg)](#swift-package-manager)
 [![Carthage Compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
